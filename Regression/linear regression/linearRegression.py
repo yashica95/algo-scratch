@@ -26,7 +26,7 @@ class LinearRegressionModal:
     with the theta values captured in fit(). 
     y_pred = theta0 + theta1*x1 + theta2*x2 ....
     
-    accuracy() : This method returns the mean squared error of the 
+    getAccuracy() : This method returns the mean squared error of the 
     linear regression model 
     
     -------------------------
@@ -34,10 +34,11 @@ class LinearRegressionModal:
 
         from sklearn.datasets import load_boston
         X_train, y_train = load_boston(return_X_y=True)
-        model = LinearRegressionModal().fit(X_train, y_train, alpha=0.1, num_epochs=100)
+        reg = LinearRegressionModal()
+        model = reg.fit(X_train, y_train, alpha=0.1, num_epochs=100)
 
         X_test = X_train[:10 , :]
-        LinearRegressionModal().predict(X_test, model)
+        reg.predict(X_test, model)
             
     """
     
@@ -99,10 +100,10 @@ class LinearRegressionModal:
         root_mean_squared_error = np.sqrt(np.mean((y_pred - y).T@(y_pred - y)))
         return root_mean_squared_error
     
-    def predict(self, X_test, model):
-        X_test_norm = self.normaliseTest(X_test, model[2], model[3])
+    def predict(self, X_test):
+        X_test_norm = self.normaliseTest(X_test, self.model[2], self.model[3])
         X_test = self.addNewColumn(X_test_norm)
-        return np.dot(X_test, model[1])
+        return np.dot(X_test, self.model[1])
         
     def fit(self, X, y, alpha, num_epochs ):
         #feature scaling 
@@ -129,8 +130,8 @@ class LinearRegressionModal:
             plt.xlabel('Iterations')
             plt.ylabel('Cost function')
 
-        
-        return J_values, params, mean, std, mse
+        self.model = [J_values, params, mean, std, mse]
+        return self.model
     
     
     def getAccuracy(self):
