@@ -9,21 +9,42 @@ class LinearRegressionModal:
     to minimize the residual sum of squares between the observed targets in
     the dataset, and the targets predicted by the linear approximation.
     
-    -----
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import LinearRegressionModal
-    >>> X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
-    >>> # y = 1 * x_0 + 2 * x_1 + 3
-    >>> y = np.dot(X, np.array([1, 2])) + 3
-    >>> reg = LinearRegressionModal().fit(X, y, alpha=0.01, num_epochs = 100)
-    >>> predict(np.array([[3, 5]]), reg)
-    array([16.])
+    params:
+    print_details : if True, returns the details after every epoch 
+    X: X_train is the training dataset with m samples (rows) and n features (columns)
+    y: Y_train is the training dataset with m target values 
+    alpha: alpha is the learning rate for the gradient descent steps
+    num_epochs: it defines the number of iterations of gradient descent 
+    
+    returns:
+    
+    fit() : This method fit the X, y values and returns the values of cost function 
+    after every epoch, the final thetha values of the hyothesis, 
+    the mean of each column and standard deviation of each column.
+    
+    predict() : This method predicts the value of new sample 
+    with the theta values captured in fit(). 
+    y_pred = theta0 + theta1*x1 + theta2*x2 ....
+    
+    accuracy() : This method returns the mean squared error of the 
+    linear regression model 
+    
+    -------------------------
+    Example : 
+
+        from sklearn.datasets import load_boston
+        X_train, y_train = load_boston(return_X_y=True)
+        model = LinearRegressionModal().fit(X_train, y_train, alpha=0.1, num_epochs=100)
+
+        X_test = X_train[:10 , :]
+        LinearRegressionModal().predict(X_test, model)
+            
     """
-    def __init__(self):
+    
+    def __init__(self, print_details = False):
         self.mean_array = []
         self.std_array = []
+        self.print_details = print_details
 
      
     def normalise(self, X):
@@ -67,7 +88,8 @@ class LinearRegressionModal:
             H = self.h(X, theta)
             J_epoch = self.J(X, theta, y)
             J_hist.append(J_epoch)
-            print("epoch " , epoch , " -------------> J(theta) = ", J_epoch , "\n")
+            if self.print_details:
+                print("epoch " , epoch , " -------------> J(theta) = ", J_epoch , "\n")
             descent = alpha*( (1/X.shape[0])* np.dot( (X.T), H - y )  )
             theta = theta - descent
 
@@ -75,7 +97,7 @@ class LinearRegressionModal:
     
     def accuracy(self,y_pred, y):
         root_mean_squared_error = np.sqrt(np.mean((y_pred - y).T@(y_pred - y)))
-        print("MSE ----------->" , root_mean_squared_error)   
+        return root_mean_squared_error
     
     def predict(self, X_test, model):
         X_test_norm = self.normaliseTest(X_test, model[2], model[3])
@@ -92,24 +114,24 @@ class LinearRegressionModal:
         
         #find accuracy
         y_pred = np.dot(X,params)
-        print('Final Cost function value ---->' , J_values[-1], "\n")
-        print('Parameters of the linear regression ---->',"\n", str(params), "\n")
-        mse = self.accuracy(y_pred, y)
+        self.y_pred = y_pred 
+        self.y = y 
+        mse = self.accuracy(self.y_pred, self.y)
+        
+        print("MSE ---->" , mse)
+        if self.print_details:
+            print('Final Cost function value ---->' , J_values[-1], "\n")
+            print('Parameters of the linear regression ---->',"\n", str(params), "\n")
+            
 
-        plt.plot(J_values)
-        plt.title('Cost function for alpha = '+ str(alpha))
-        plt.xlabel('Iterations')
-        plt.ylabel('Cost function')
+            plt.plot(J_values)
+            plt.title('Cost function for alpha = '+ str(alpha))
+            plt.xlabel('Iterations')
+            plt.ylabel('Cost function')
 
         
-        return J_values, params, mean, std
-
-
-from sklearn.datasets import load_boston
-X_train, y_train = load_boston(return_X_y=True)
-model = LinearRegressionModal().fit(X_train, y_train, alpha=0.1, num_epochs=100)
-
-X_test = X_train[:10 , :]
-LinearRegressionModal().predict(X_test, model)
-
-y_train[:10]
+        return J_values, params, mean, std, mse
+    
+    
+    def getAccuracy(self):
+        return self.accuracy(self.y_pred, self.y)
