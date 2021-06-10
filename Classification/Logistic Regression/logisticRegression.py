@@ -2,18 +2,19 @@ import pandas as pd
 import numpy as np 
 import matplotlib.pyplot as plt 
 
-class LinearRegressionModal:
+class LogisticRegressionModal:
     """
-    Ordinary least squares Linear Regression.
-    LinearRegression fits a linear model with coefficients thetas = (theta1, theta2 ....)
+    Logistic Regression.
+    LogisticRegressionModal fits a sigmoid function based hypothesis with coefficients w = (w1, ..., wp)
     to minimize the residual sum of squares between the observed targets in
-    the dataset, and the targets predicted by the linear approximation.
+    the dataset, and the targets predicted by approximation.
     
     params:
     print_details : if True, returns the details after every epoch 
     X: X_train is the training dataset with m samples (rows) and n features (columns)
     y: Y_train is the training dataset with m target values 
     alpha: alpha is the learning rate for the gradient descent steps
+    threshold : default = 0.5. Threshold decides the value where the probability values assumes y = 1 
     num_epochs: it defines the number of iterations of gradient descent 
     
     returns:
@@ -24,10 +25,10 @@ class LinearRegressionModal:
     
     predict() : This method predicts the value of new sample 
     with the theta values captured in fit(). 
-    y_pred = theta0 + theta1*x1 + theta2*x2 ....
+    y_pred = 1/ (1 + e^(-(theta0+ theta1x1 + theta2x2 + .... )))
     
     getAccuracy() : This method returns the mean squared error of the 
-    linear regression model 
+    logistic regression model 
     
     -------------------------
     Example : 
@@ -77,10 +78,24 @@ class LinearRegressionModal:
         return np.array([initial_value]*X.shape[1])
 
     def h(self, X, theta):
-        return np.dot(X, theta)
+        z = np.dot(X, theta)
+        H = 1/(1 + (np.exp(-z))) + 0.000001
+        return H
+    
+    def cost(self, X, theta, y ):
+        term1 = - y@np.log(self.h(X,theta))
+        term2 = - (1-y)@np.log(1 - self.h(X,theta))
+        
+        return term1+ term2
     
     def J(self, X, theta, y):
-        return (((self.h(X, theta) - y).T@(self.h(X,theta)-y)))/(2*X.shape[0])
+        
+        cost = self.cost(X, theta,y)
+        
+        j = (1/X.shape[0])* (cost)
+        return j
+    
+    
     
     def gradientDescent(self, X, y, alpha, num_epochs):
         J_hist = []
@@ -103,9 +118,12 @@ class LinearRegressionModal:
     def predict(self, X_test):
         X_test_norm = self.normaliseTest(X_test, self.model[2], self.model[3])
         X_test = self.addNewColumn(X_test_norm)
-        return np.dot(X_test, self.model[1])
+        prediction = self.h(X_test, self.model[1])
+        prediction[prediction>=self.threshold] = 1
+        prediction[prediction<self.threshold] = 0
+        return prediction
         
-    def fit(self, X, y, alpha, num_epochs ):
+    def fit(self, X, y, alpha, threshold, num_epochs ):
         #feature scaling 
         X, mean, std =  self.normalise(X)
         # add new column of 1's to X
@@ -114,7 +132,14 @@ class LinearRegressionModal:
         J_values, params= self.gradientDescent(X, y, alpha, num_epochs)
         
         #find accuracy
-        y_pred = np.dot(X,params)
+        y_pred = self.h(X, params)
+        
+        #applying threshold 
+        self.threshold = threshold
+        
+        y_pred[y_pred >= threshold] = 1
+        y_pred[y_pred < threshold] = 0
+        
         self.y_pred = y_pred 
         self.y = y 
         mse = self.accuracy(self.y_pred, self.y)
@@ -136,3 +161,4 @@ class LinearRegressionModal:
     
     def getAccuracy(self):
         return self.accuracy(self.y_pred, self.y)
+
